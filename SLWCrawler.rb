@@ -1,5 +1,6 @@
 require 'net/http'
 require 'nokogiri'
+require_relative 'judgment'
 
 class SLWCrawler
   def self.fetch_website
@@ -8,10 +9,21 @@ class SLWCrawler
     response
   end
 
-  def self.scrape_judgment_nodes(response)
+  def self.scrape_into_judgments(response)
     html_doc = Nokogiri::HTML(response)
     judgment_nodes = html_doc.xpath('//ul[@id="judgments-list"]/li')
-    judgment_nodes
+
+    judgments = Array.new
+    judgment_nodes.each do |node|
+      judgments << Judgment.new(
+        :case_name => self.get_case_name(node),
+        :neutral_citation => self.get_neutral_citation(node),
+        :decision_date => self.get_decision_date(node),
+        :catchwords => self.get_catchwords(node),
+        :url => self.get_url(node)
+      )
+    end
+    judgments
   end
 
   def self.download_judgment(node)
@@ -35,15 +47,23 @@ class SLWCrawler
     end
   end
 
-  def self.get_url(node)
-    node.xpath('a/@href').to_s
-  end
-
   def self.get_case_name(node)
-    node.xpath('a/text()').to_s.gsub('/', '-')
+    node.at_xpath('a/text()').to_s
   end
 
-  def self.generate_filename(node)
+  def self.get_neutral_citation(node)
+    node.at_xpath('span[@id="link-pdf"]/text()').to_s.match(/^(.*) \|/)[1]
+  end
 
+  def self.get_decision_date(node)
+    node.at_xpath('span[@id="link-pdf"]/text()').to_s.match(/Decision Date: (.*)/)[1]
+  end
+
+  def self.get_catchwords(node)
+    node.at_xpath('span[@id="catchwords"]/text()').to_s
+  end
+
+  def self.get_url(node)
+    node.at_xpath('a/@href').to_s
   end
 end

@@ -10,15 +10,16 @@ describe SLWCrawler do
     end
   end
 
-  it 'scrapes nodes containing individual judgments' do
+  it 'scrapes website into array of judgments' do
     VCR.use_cassette('fetch_website') do
       response = SLWCrawler.fetch_website
-      nodes = SLWCrawler.scrape_judgment_nodes(response.body)
-      expect(nodes).not_to be_nil
+      judgments = SLWCrawler.scrape_into_judgments(response.body)
+      puts judgments.inspect
+      expect(judgments).not_to be_nil
     end
   end
 
-  it 'downloads judgements' do
+  xit 'downloads judgements' do
     VCR.use_cassette('fetch_website') do
       response = SLWCrawler.fetch_website
       nodes = SLWCrawler.scrape_judgment_nodes(response.body)
