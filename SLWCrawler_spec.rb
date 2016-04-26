@@ -10,15 +10,20 @@ describe SLWCrawler do
     end
   end
 
-  xit 'scrapes links to judgments' do
-    response = SLWCrawler.fetch_website
-    links = SLWCrawler.scrape_links(response)
-    expect(links).not_to be_nil
-    expect(links).not_to be_empty
+  it 'scrapes nodes containing individual judgments' do
+    VCR.use_cassette('fetch_website') do
+      response = SLWCrawler.fetch_website
+      nodes = SLWCrawler.scrape_judgment_nodes(response.body)
+      expect(nodes).not_to be_nil
+    end
   end
 
   it 'downloads judgements' do
-
+    VCR.use_cassette('fetch_website') do
+      response = SLWCrawler.fetch_website
+      nodes = SLWCrawler.scrape_judgment_nodes(response.body)
+      nodes.each { |n| SLWCrawler.download_judgment(n) }
+    end
   end
 
   it 'maintains index of download judgments and their categories' do
