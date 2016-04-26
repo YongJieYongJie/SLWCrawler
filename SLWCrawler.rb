@@ -26,23 +26,21 @@ class SLWCrawler
     judgments
   end
 
-  def self.download_judgment(node)
-    url = self.get_url(node)
-    case_name = self.get_case_name(node)
+  def self.download_judgments(judgments)
+    domain = 'www.singaporelawwatch.sg'
 
-    domain = url.slice(url.index('//')+2..url.index('/slw')-1)
-    resource_path = url.slice(url.index('/slw')..-1)
-
-    puts "Downloading #{case_name}..."
     Net::HTTP.start(domain) do |http|
-      resp = http.get(resource_path)
+      judgments.each do |j|
+        puts "Downloading #{j[:case_name]}..."
+        STDOUT.flush
 
-      # extract citation from original filename from server
-      content_disposition = resp.to_hash['content-disposition'][0]
-      citation = content_disposition.match(/filename="(.*)\.pdf"/)[0]
+        url = j[:url].to_s
+        resource_path = url.slice(url.index('/slw')..-1)
+        resp = http.get(resource_path)
 
-      open(case_name + '.pdf', 'wb') do |file|
-        file.write(resp.body)
+        open(j.generate_filename, 'wb') do |file|
+          file.write(resp.body)
+        end
       end
     end
   end
