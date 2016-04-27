@@ -1,8 +1,12 @@
 require 'net/http'
 require 'nokogiri'
+require 'csv'
 require_relative 'judgment'
 
 class SLWCrawler
+  DOWNLOAD_DIR = 'downloaded_cases'
+  INDEX_PATH = 'downloaded_cases.csv'
+
   def self.fetch_website
     uri = URI('http://www.singaporelawwatch.sg/slw/index.php/judgments')
     response = Net::HTTP.get_response(uri)
@@ -27,6 +31,8 @@ class SLWCrawler
   end
 
   def self.download_judgments(judgments)
+    self.create_directory_if_none_exist(DOWNLOAD_DIR)
+
     domain = 'www.singaporelawwatch.sg'
 
     Net::HTTP.start(domain) do |http|
@@ -38,11 +44,23 @@ class SLWCrawler
         resource_path = url.slice(url.index('/slw')..-1)
         resp = http.get(resource_path)
 
-        open(j.generate_filename, 'wb') do |file|
+        open(DOWNLOAD_DIR + '/' + j.generate_filename, 'wb') do |file|
           file.write(resp.body)
         end
+
+        self.write_to_index_file(j)
       end
     end
+  end
+
+  def self.write_to_index_file(judgment)
+    CSV.open(INDEX_PATH, 'a') do |csv|
+      csv << [judgment[:case_name], judgment[:neutral_citation], judgment[:decision_date], judgment[:catchwords]]
+    end
+  end
+
+  def self.create_directory_if_none_exist(directory_name)
+    Dir.mkdir(directory_name) unless File.exist?(directory_name)
   end
 
   def self.get_case_name(node)
