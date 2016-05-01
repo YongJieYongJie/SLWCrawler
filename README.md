@@ -10,4 +10,4 @@ Things I've learned include:
 
 ## Usage
 
-Include `SLWCrawler.rb` can call `SLWCrawler.serve_some_justice`
+Include `SLWCrawler.rb` and call `SLWCrawler.serve_some_justice`
