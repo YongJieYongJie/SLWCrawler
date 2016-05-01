@@ -10,7 +10,7 @@ describe SLWCrawler do
     end
   end
 
-  it 'scrapes website into array of judgments' do
+  it 'scrapes page source into an array of judgments' do
     VCR.use_cassette('fetch_website') do
       website_source = %(
 <ul id="judgments-list">
@@ -47,12 +47,28 @@ describe SLWCrawler do
     end
   end
 
-  xit 'downloads judgements' do
-    VCR.use_cassette('fetch_website') do
-      response = SLWCrawler.fetch_website
-      nodes = SLWCrawler.scrape_judgment_nodes(response.body)
-      nodes.each { |n| SLWCrawler.download_judgment(n) }
-    end
+  it 'prunes existing judgments' do
+    existing_judgments = [{
+      :case_name => 'Lee Han Min Garry v Piong Michelle Lucia',
+      :neutral_citation => '[2016] SGHC 79',
+      :url => 'http://www.singaporelawwatch.sg/slw/index.php/component/cck/?task=download&amp;file=attached_document&amp;id=80783&amp;utm_source=web%20subscription&amp;utm_medium=web&amp;src=judgments'
+    }]
+
+    fetched_judgments = [{
+      :case_name => 'Lee Han Min Garry v Piong Michelle Lucia',
+      :neutral_citation => '[2016] SGHC 79',
+      :url => 'http://www.singaporelawwatch.sg/slw/index.php/component/cck/?task=download&amp;file=attached_document&amp;id=80783&amp;utm_source=web%20subscription&amp;utm_medium=web&amp;src=judgments'
+    },
+    {
+      :case_name => 'Maniach Pte Ltd v L Capital Jones Ltd and another',
+      :neutral_citation => '[2016] SGHC 65',
+      :url => 'http://www.singaporelawwatch.sg/slw/index.php/component/cck/?task=download&amp;file=attached_document&amp;id=80782&amp;utm_source=web%20subscription&amp;utm_medium=web&amp;src=judgments'
+    }]
+
+    allow(SLWCrawler).to receive(:get_downloaded_judgments) { existing_judgments }
+    pruned_judgments = SLWCrawler.prune_already_downloaded_judgments(fetched_judgments)
+
+    expect(pruned_judgments.count).to eq(1)
   end
 
   it 'maintains index of download judgments and their categories' do
