@@ -7,3 +7,7 @@ Things I've learned include:
 - using anonymous struct for data class (judgment.rb)
 - trying my best on immutability
 - use Ruby CSV for basic data storage
+
+## Usage
+
+Include `SLWCrawler.rb` can call `SLWCrawler.serve_some_justice`
