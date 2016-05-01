@@ -5,34 +5,68 @@ require 'HTMLEntities'
 require_relative 'judgment'
 
 class SLWCrawler
+  SINGAPORE_LAW_WATCH_URL = 'http://www.singaporelawwatch.sg/slw/judgments.html'
   DOWNLOAD_DIR = 'downloaded_cases'
   INDEX_FILE_PATH = DOWNLOAD_DIR + '/index.csv'
 
-  def self.fetch_website
-    uri = URI('http://www.singaporelawwatch.sg/slw/index.php/judgments')
-    response = Net::HTTP.get_response(uri)
-    response
+  def self.serve_some_justice
+    # make sure progress messages are shown immediately and not be bufferred
+    STDOUT.sync = true
+
+    print 'Fetching Singapore Law Watch website...'
+    page_source =  self.fetch_website
+    puts 'OK'
+
+    print 'Scraping page source for judgments...'
+    judgments = self.scrape_page_source_into_judgments(page_source)
+    puts "found #{judgments.count} judgments"
+
+    print 'Checking for new cases...'
+    to_download = self.prune_downloaded_judgments(judgments)
+    puts "#{to_download.count} new cases to download"
+
+    if to_download.count > 0
+      puts 'Downloading cases...'
+      self.download_judgments(to_download)
+    end
+
+    puts 'Justice is served.'
   end
 
-  def self.scrape_into_judgments(response)
-    html_doc = Nokogiri::HTML(response)
+  def self.fetch_website
+    uri = URI(SINGAPORE_LAW_WATCH_URL)
+    response = Net::HTTP.get_response(uri)
+    response.body
+  end
+
+  def self.scrape_page_source_into_judgments(page_source)
+    html_doc = Nokogiri::HTML(page_source)
     judgment_nodes = html_doc.xpath('//ul[@id="judgments-list"]/li')
 
     judgments = Array.new
     judgment_nodes.each do |node|
-      judgments << Judgment.new(
-        :case_name => self.get_case_name(node),
-        :neutral_citation => self.get_neutral_citation(node),
-        :decision_date => self.get_decision_date(node),
-        :catchwords => self.get_catchwords(node),
-        :url => self.get_url(node)
-      )
+      judgments << self.parse_node_into_judgment(node)
     end
+
     judgments
   end
 
+  def self.prune_downloaded_judgments(judgments)
+    # if no index file exists, there is nothing to be pruned
+    return judgments unless self.has_index_file
+
+    downloaded_judgments = self.get_downloaded_judgments()
+    citations_of_downloaded_judgments = self.extract_array_of_citations(downloaded_judgments)
+
+    new_judgments = judgments.select do |j|
+      !citations_of_downloaded_judgments.include?(j[:neutral_citation])
+    end
+
+    new_judgments
+  end
+
   def self.download_judgments(judgments)
-    judgments = self.prune_already_downloaded_judgments(judgments)
+    judgments = self.prune_downloaded_judgments(judgments)
     return if judgments.empty?
 
     self.create_directory_if_none_exist(DOWNLOAD_DIR)
@@ -60,27 +94,18 @@ class SLWCrawler
     end
   end
 
-  def self.prune_already_downloaded_judgments(judgments)
-    # if no index file exists, there is nothing to be pruned
-    return judgments unless self.has_index_file
-
-    downloaded_judgments = self.get_downloaded_judgments()
-    citations_of_downloaded_judgments = self.extract_array_of_citations(downloaded_judgments)
-
-    new_judgments = judgments.select do |j|
-      !citations_of_downloaded_judgments.include?(j[:neutral_citation])
-    end
-
-    new_judgments
+  def self.parse_node_into_judgment(node)
+    Judgment.new(
+      :case_name => self.get_case_name(node),
+      :neutral_citation => self.get_neutral_citation(node),
+      :decision_date => self.get_decision_date(node),
+      :catchwords => self.get_catchwords(node),
+      :url => self.get_url(node)
+    )
   end
 
-  def self.extract_array_of_citations(judgments)
-    citations = Array.new
-    judgments.each do |j|
-      citations << j[:neutral_citation]
-    end
-
-    citations
+  def self.has_index_file
+    File.exist?(INDEX_FILE_PATH)
   end
 
   def self.get_downloaded_judgments
@@ -103,8 +128,13 @@ class SLWCrawler
     downloaded_judgments
   end
 
-  def self.has_index_file
-    File.exist?(INDEX_FILE_PATH)
+  def self.extract_array_of_citations(judgments)
+    citations = Array.new
+    judgments.each do |j|
+      citations << j[:neutral_citation]
+    end
+
+    citations
   end
 
   def self.write_to_index_file(judgment)

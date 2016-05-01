@@ -5,8 +5,8 @@ require_relative 'SLWCrawler'
 describe SLWCrawler do
   it 'fetches SLW website' do
     VCR.use_cassette('fetch_website') do
-      response = SLWCrawler.fetch_website
-      expect(response.code.to_i).to eq(200)
+      page_source = SLWCrawler.fetch_website
+      expect(page_source).to include('<ul id="judgments-list">')
     end
   end
 
@@ -42,7 +42,7 @@ describe SLWCrawler do
   </li>
 </ul>
 )
-      judgments = SLWCrawler.scrape_into_judgments(website_source)
+      judgments = SLWCrawler.scrape_page_source_into_judgments(website_source)
       expect(judgments.count).to eq(2)
     end
   end
@@ -66,7 +66,7 @@ describe SLWCrawler do
     }]
 
     allow(SLWCrawler).to receive(:get_downloaded_judgments) { existing_judgments }
-    pruned_judgments = SLWCrawler.prune_already_downloaded_judgments(fetched_judgments)
+    pruned_judgments = SLWCrawler.prune_downloaded_judgments(fetched_judgments)
 
     expect(pruned_judgments.count).to eq(1)
   end
