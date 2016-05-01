@@ -64,14 +64,43 @@ class SLWCrawler
     # if no index file exists, there is nothing to be pruned
     return judgments unless self.has_index_file
 
+    downloaded_judgments = self.get_downloaded_judgments()
+    citations_of_downloaded_judgments = self.extract_array_of_citations(downloaded_judgments)
+
+    new_judgments = judgments.select do |j|
+      !citations_of_downloaded_judgments.include?(j[:neutral_citation])
+    end
+
+    new_judgments
+  end
+
+  def self.extract_array_of_citations(judgments)
+    citations = Array.new
+    judgments.each do |j|
+      citations << j[:neutral_citation]
+    end
+
+    citations
+  end
+
+  def self.get_downloaded_judgments
     begin
-      index = CSV.read(INDEX_FILE_PATH).flatten
+      index = CSV.read(INDEX_FILE_PATH, :headers => true)
     rescue
       abort("Error opening index file. Please close and try againt")
     end
 
-    remaining_judgments = judgments.select { |j| !index.include?(j[:neutral_citation]) }
-    remaining_judgments
+    downloaded_judgments = Array.new
+    index.each do |csv_row|
+      downloaded_judgments << Judgment.new(
+        :case_name => csv_row['Case name'],
+        :neutral_citation => csv_row['Neutral citation'],
+        :decision_date => csv_row['Decision date'],
+        :catchwords => csv_row['Catchwords']
+      )
+    end
+
+    downloaded_judgments
   end
 
   def self.has_index_file
