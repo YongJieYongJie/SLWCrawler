@@ -6,3 +6,4 @@ Things I've learned include:
 - using VCR to record and playback http response for faster tests
 - using anonymous struct for data class (judgment.rb)
 - trying my best on immutability
+- use Ruby CSV for basic data storage
