@@ -9,6 +9,6 @@ Judgment = Struct.new(:case_name, :neutral_citation, :decision_date, :catchwords
     condensed_case_name.gsub!(/public prosecutor/i, 'PP')
     condensed_case_name.gsub!(/ \([^\(]*?(liquidation|executrix|formerly|trading)[^\)]*?\)/i, '')
     condensed_case_name.gsub!(/\s+/, ' ')
-	"#{condensed_case_name}, #{neutral_citation}.pdf"
+	condensed_case_name
   end
 end

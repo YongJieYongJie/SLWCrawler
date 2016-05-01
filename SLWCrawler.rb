@@ -41,7 +41,8 @@ class SLWCrawler
 
     Net::HTTP.start(domain) do |http|
       judgments.each do |j|
-        puts "Downloading #{j.get_condensed_case_name}..."
+        case_name_with_citation = "#{j.get_condensed_case_name}, #{j[:neutral_citation]}"
+        puts "Downloading #{case_name_with_citation}..."
         STDOUT.flush
 
         url = j[:url].to_s
@@ -49,7 +50,7 @@ class SLWCrawler
         resp = http.get(resource_path)
 
         # replaces illegal characters \/:*?"<> with underscore
-        filename = j.get_condensed_case_name.gsub(/[\\\/:\*\?"<>|]/, '_')
+        filename = case_name_with_citation.gsub(/[\\\/:\*\?"<>|]/, '_') + '.pdf'
         open(DOWNLOAD_DIR + '/' + filename, 'wb') do |file|
           file.write(resp.body)
         end
