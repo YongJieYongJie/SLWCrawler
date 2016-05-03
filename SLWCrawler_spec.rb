@@ -65,6 +65,7 @@ describe SLWCrawler do
       :url => 'http://www.singaporelawwatch.sg/slw/index.php/component/cck/?task=download&amp;file=attached_document&amp;id=80782&amp;utm_source=web%20subscription&amp;utm_medium=web&amp;src=judgments'
     }]
 
+    allow(SLWCrawler).to receive(:has_index_file) { true }
     allow(SLWCrawler).to receive(:get_downloaded_judgments) { existing_judgments }
     pruned_judgments = SLWCrawler.prune_downloaded_judgments(fetched_judgments)
 
