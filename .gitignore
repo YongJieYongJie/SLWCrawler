@@ -1,6 +1,4 @@
 /downloaded_cases/*
-/downloaded_cases.csv
-main.rb
 
 *.gem
 *.rbc

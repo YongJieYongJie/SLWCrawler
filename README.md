@@ -8,6 +8,11 @@ Things I've learned include:
 - trying my best on immutability
 - use Ruby CSV for basic data storage
 
-## Usage
+### Usage
 
-Include `SLWCrawler.rb` and call `SLWCrawler.serve_some_justice`
+Run `ruby main.rb`, install missing gem as needed
+
+## Issues
+
+- Not multi-threaded, first run will always be slow
+- Uses similar `judgment.rb` as [LNCrawler][LNC], should extract into separate project
