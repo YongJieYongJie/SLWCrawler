@@ -1,4 +1,6 @@
-/downloaded_cases/*
+*.pdf
+*.csv
+*.bat
 
 *.gem
 *.rbc
