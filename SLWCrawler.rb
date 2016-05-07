@@ -2,35 +2,36 @@ require 'net/http'
 require 'nokogiri'
 require 'csv'
 require 'HTMLEntities'
+require 'fileutils'
 require_relative 'judgment'
 
 class SLWCrawler
   SINGAPORE_LAW_WATCH_URL = 'http://www.singaporelawwatch.sg/slw/judgments.html'
-  DOWNLOAD_DIR = 'downloaded_cases'
+  DOWNLOAD_DIR = 'crawled_judgments'
   INDEX_FILE_PATH = DOWNLOAD_DIR + '/index.csv'
 
   def self.serve_some_justice
     # make sure progress messages are shown immediately and not be bufferred
     STDOUT.sync = true
 
-    print 'Fetching Singapore Law Watch website...'
+    print '[*] Fetching Singapore Law Watch website...'
     page_source =  self.fetch_website
     puts 'OK'
 
-    print 'Scraping page source for judgments...'
+    print '[*] Scraping page source for judgments...'
     judgments = self.scrape_page_source_into_judgments(page_source)
     puts "found #{judgments.count} judgments"
 
-    print 'Checking for new cases...'
+    print '[*] Checking for new cases...'
     to_download = self.prune_downloaded_judgments(judgments)
     puts "#{to_download.count} new cases to download"
 
     if to_download.count > 0
-      puts 'Downloading cases...'
+      puts '[*] Downloading cases...'
       self.download_judgments(to_download)
     end
 
-    puts 'Justice is served.'
+    puts '[*] Justice is served.'
   end
 
   def self.fetch_website
@@ -74,9 +75,10 @@ class SLWCrawler
     domain = 'www.singaporelawwatch.sg'
 
     Net::HTTP.start(domain) do |http|
-      judgments.each do |j|
+      total = judgments.count
+      judgments.each_with_index do |j, index|
         case_name_with_citation = "#{j.get_condensed_case_name}, #{j[:neutral_citation]}"
-        puts "Downloading #{case_name_with_citation}..."
+        puts "[==>] Downloading case [#{index+1}/#{total}]: #{case_name_with_citation}..."
         STDOUT.flush
 
         url = j[:url].to_s
@@ -161,7 +163,7 @@ class SLWCrawler
   end
 
   def self.create_directory_if_none_exist(directory_name)
-    Dir.mkdir(directory_name) unless File.exist?(directory_name)
+    FileUtils.mkdir_p(directory_name) unless File.exist?(directory_name)
   end
 
   def self.get_case_name(node)
