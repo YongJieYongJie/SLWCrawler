@@ -1,7 +1,7 @@
 require 'net/http'
 require 'nokogiri'
 require 'csv'
-require 'HTMLEntities'
+require 'htmlentities'
 require 'fileutils'
 require_relative 'judgment'
 
